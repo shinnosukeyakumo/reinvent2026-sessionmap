@@ -25,6 +25,18 @@ npm run dev
 
 公式カタログのデータ（`public/data/sessions.json`）は AWS のコンテンツのため、リポジトリには含めていない。
 
+## 公開先
+
+- URL: https://main.d13ddmw6nhifec.amplifyapp.com/
+- Amplify Hosting（us-east-1、appId `d13ddmw6nhifec`、ブランチ `main`）。GitHub とは連携しておらず、手動デプロイで更新する
+- PWA 対応。スマホでは共有メニューの「ホーム画面に追加」でアプリとして開ける。アプリ本体・セッションデータ・一度見た地図タイルは端末に保存され、電波が弱くても開ける
+
+手動デプロイの手順:
+
+1. `npm run fetch:catalog && npm run build`
+2. `dist/` の中身を zip にまとめる（`cd dist && zip -r ../dist.zip .`）
+3. Amplify の `CreateDeployment` で受け取ったアップロード URL に zip を PUT し、`StartDeployment` を呼ぶ
+
 ## セッションデータの更新
 
 公式セッションカタログ（RainFocus のイベント API `catalog.awsevents.com/api/sessions`）から全件を取得し、`public/data/sessions.json` に整形して保存する。

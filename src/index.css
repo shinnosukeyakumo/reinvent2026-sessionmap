@@ -48,6 +48,8 @@ button {
   align-items: center;
   gap: 16px;
   padding: 10px 16px;
+  /* ホーム画面から全画面で開いたとき、ノッチやステータスバーに重ならないようにする */
+  padding-top: max(10px, env(safe-area-inset-top));
   border-bottom: 1px solid var(--border);
   background: linear-gradient(90deg, #1a1033, #0b0d17 60%);
   flex-wrap: wrap;
