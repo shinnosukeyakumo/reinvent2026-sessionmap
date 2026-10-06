@@ -28,6 +28,7 @@ export function SessionCard({ occ, starred, onToggleStar, hide = {} }: Props) {
             {t.start}–{t.end}
           </span>
         )}
+        {s.isNew && <span className="badge badge--new">NEW</span>}
         <span className="card__code">{s.code}</span>
         <span className="badge">{s.type}</span>
         {s.level && <span className="badge badge--muted">{s.level.split(' ')[0]}</span>}

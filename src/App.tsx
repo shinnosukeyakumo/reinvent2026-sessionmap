@@ -5,10 +5,30 @@ import { CategoryView, TimeView, VenueView } from './components/Views'
 import { PlanView } from './components/PlanView'
 import { ReservationCopy } from './components/ReservationCopy'
 import { PlanPalette } from './components/PlanPalette'
+import { useGeolocation } from './geo'
 import { HOME_VENUE, LIVE_ONLY_TYPES, buildItems, usePlan, type PlanKind } from './plan'
 import type { Catalog, Occurrence, ViewMode } from './types'
 
 const STAR_KEY = 'sessionmap:starred'
+const NEW_DAYS = 7
+
+/**
+ * カタログに後から追加されたセッションに isNew を付ける。
+ * 最初に取得したときからあるもの（firstSeen が最も古いもの）は新着にしない
+ */
+function markNew(c: Catalog): Catalog {
+  const seen = c.sessions.map((s) => s.firstSeen).filter((v): v is string => !!v)
+  if (!seen.length) return c
+  const baseline = seen.reduce((a, b) => (a < b ? a : b))
+  const limit = new Date(c.fetchedAt).getTime() - NEW_DAYS * 24 * 60 * 60 * 1000
+  return {
+    ...c,
+    sessions: c.sessions.map((s) => ({
+      ...s,
+      isNew: !!s.firstSeen && s.firstSeen !== baseline && new Date(s.firstSeen).getTime() >= limit,
+    })),
+  }
+}
 const PANEL_KEY = 'sessionmap:panelWidth'
 const PANEL_MIN = 360
 
@@ -51,9 +71,11 @@ export default function App() {
   const [type, setType] = useState('')
   const [query, setQuery] = useState('')
   const [starOnly, setStarOnly] = useState(false)
+  const [newOnly, setNewOnly] = useState(false)
   // 録画が残らない形式（ワークショップ等）を優先して探したいので、既定でオン
   const [liveOnly, setLiveOnly] = useState(true)
   const plan = usePlan()
+  const geo = useGeolocation()
   // マイプランで、タップで置くために選んでいる部品
   const [armed, setArmed] = useState<PlanKind | null>(null)
   const [starred, setStarred] = useState<Set<string>>(loadStarred)
@@ -85,7 +107,7 @@ export default function App() {
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}data/sessions.json`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then(setCatalog)
+      .then((c: Catalog) => setCatalog(markNew(c)))
       .catch((e) => setError(String(e)))
   }, [])
 
@@ -136,13 +158,14 @@ export default function App() {
       if (type && s.type !== type) return false
       if (liveOnly && !LIVE_ONLY_TYPES.has(s.type)) return false
       if (starOnly && !starred.has(s.id)) return false
+      if (newOnly && !s.isNew) return false
       if (q) {
         const hay = `${s.code} ${s.title} ${s.abstract} ${s.speakers.join(' ')} ${s.areas.join(' ')}`.toLowerCase()
         if (!hay.includes(q)) return false
       }
       return true
     })
-  }, [allOccurrences, day, topics, type, liveOnly, starOnly, starred, query])
+  }, [allOccurrences, day, topics, type, liveOnly, starOnly, newOnly, starred, query])
 
   const slots = useMemo(() => [...new Set(matched.map((o) => o.time.start))].sort(), [matched])
 
@@ -171,7 +194,7 @@ export default function App() {
 
   const common = { occurrences: forList, starred, onToggleStar: toggleStar }
   const venueLabel = venue ? VENUE_BY_ID.get(venue)?.label ?? venue : null
-  const hasFilter = venue || slot || topics.size || type || query || starOnly || !liveOnly
+  const hasFilter = venue || slot || topics.size || type || query || starOnly || newOnly || !liveOnly
 
   return (
     <div className="app">
@@ -204,7 +227,7 @@ export default function App() {
 
       <main className="layout" style={{ '--panel-w': `${panelWidth}px` } as React.CSSProperties}>
         <div className="map-wrap">
-          <MapView occurrences={forMap} selectedVenue={venue} onSelectVenue={setVenue} route={route} />
+          <MapView occurrences={forMap} selectedVenue={venue} onSelectVenue={setVenue} route={route} me={geo.pos} />
           <div className="map-caption">
             {slot ? `${slot}〜 の枠` : '終日'}・{forMap.length} 件
             <span>マーカーの色はカテゴリ構成比。クリックでホテルを選択</span>
@@ -294,6 +317,10 @@ export default function App() {
               <label className="toggle">
                 <input type="checkbox" checked={starOnly} onChange={(e) => setStarOnly(e.target.checked)} />★ のみ
               </label>
+              <label className="toggle" title={`カタログに追加されてから ${NEW_DAYS} 日以内のセッション`}>
+                <input type="checkbox" checked={newOnly} onChange={(e) => setNewOnly(e.target.checked)} />
+                新着のみ
+              </label>
               {venue !== HOME_VENUE && (
                 <button type="button" className="pill" onClick={() => setVenue(HOME_VENUE)}>
                   宿（MGM）だけ
@@ -315,6 +342,7 @@ export default function App() {
                     setType('')
                     setQuery('')
                     setStarOnly(false)
+                    setNewOnly(false)
                     setLiveOnly(true)
                   }}
                 >
@@ -344,6 +372,8 @@ export default function App() {
                   onToggleStar={toggleStar}
                   armed={armed}
                   onArm={setArmed}
+                  starredAll={starredAll}
+                  geo={geo}
                 />
               </>
             )}

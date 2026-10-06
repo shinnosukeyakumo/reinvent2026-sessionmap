@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react'
-import { MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet'
+import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { VENUES, VENUE_BY_ID, topicOf, type Venue } from '../data/master'
 import { HOME_VENUE } from '../plan'
+import type { Position } from '../geo'
 import type { Occurrence } from '../types'
 
 type Props = {
@@ -12,6 +13,8 @@ type Props = {
   onSelectVenue: (id: string | null) => void
   /** マイプランで回る会場の順番（宿→…→宿） */
   route?: string[]
+  /** 現在地（位置情報を使うときだけ） */
+  me?: Position | null
 }
 
 // 全会場が収まる範囲で初期表示する
@@ -86,7 +89,7 @@ function InvalidateOnResize() {
   return null
 }
 
-export function MapView({ occurrences, selectedVenue, onSelectVenue, route = [] }: Props) {
+export function MapView({ occurrences, selectedVenue, onSelectVenue, route = [], me = null }: Props) {
   const byVenue = useMemo(() => {
     const m = new Map<string, Occurrence[]>()
     for (const o of occurrences) {
@@ -111,6 +114,22 @@ export function MapView({ occurrences, selectedVenue, onSelectVenue, route = [] 
       <FlyToSelected selectedVenue={selectedVenue} />
       <FitRoute route={route} />
       <InvalidateOnResize />
+      {me && (
+        <>
+          <Circle
+            center={[me.lat, me.lng]}
+            radius={me.accuracy}
+            pathOptions={{ color: '#4da3ff', weight: 1, fillOpacity: 0.12 }}
+          />
+          <CircleMarker
+            center={[me.lat, me.lng]}
+            radius={7}
+            pathOptions={{ color: '#fff', weight: 2, fillColor: '#4da3ff', fillOpacity: 1 }}
+          >
+            <Tooltip>現在地（誤差 約 {Math.round(me.accuracy)}m）</Tooltip>
+          </CircleMarker>
+        </>
+      )}
       {route.length > 2 && (
         <Polyline
           positions={route

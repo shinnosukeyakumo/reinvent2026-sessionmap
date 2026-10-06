@@ -18,6 +18,10 @@ export type Session = {
   sponsored: boolean
   speakers: string[]
   times: SessionTime[]
+  /** カタログで初めて見つけた日時（取得スクリプトが記録する） */
+  firstSeen?: string
+  /** アプリ側で付ける新着の印 */
+  isNew?: boolean
 }
 
 export type Catalog = {

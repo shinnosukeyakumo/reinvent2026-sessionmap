@@ -1,7 +1,7 @@
 // re:Invent 2026 のセッションカタログ（RainFocus のイベント API）を全件取得し、
 // アプリ用に整形して public/data/sessions.json に書き出す。
 // 使い方: npm run fetch:catalog
-import { writeFile, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -84,10 +84,21 @@ for (let from = 0; from < total; from += PAGE_SIZE) {
   await sleep(WAIT_MS)
 }
 
-const sessions = all.map(normalize)
+// 前回のデータから「初めて見つけた日時」を引き継ぎ、今回初めて現れたセッションには今の日時を付ける。
+// アプリはこれを使って新着セッションに NEW を付ける
+const fetchedAt = new Date().toISOString()
+let previous = null
+try {
+  previous = JSON.parse(await readFile(OUT, 'utf8'))
+} catch {
+  // 初回は前回のデータが無い
+}
+const firstSeen = new Map((previous?.sessions ?? []).map((s) => [s.id, s.firstSeen ?? previous.fetchedAt]))
+const sessions = all.map(normalize).map((s) => ({ ...s, firstSeen: firstSeen.get(s.id) ?? fetchedAt }))
+const added = sessions.filter((s) => !firstSeen.has(s.id))
 await mkdir(dirname(OUT), { recursive: true })
 await writeFile(
   OUT,
-  JSON.stringify({ fetchedAt: new Date().toISOString(), total: sessions.length, sessions }),
+  JSON.stringify({ fetchedAt, total: sessions.length, sessions }),
 )
-console.log(`wrote ${sessions.length} sessions -> ${OUT}`)
+console.log(`wrote ${sessions.length} sessions (new: ${previous ? added.length : 'first run'}) -> ${OUT}`)

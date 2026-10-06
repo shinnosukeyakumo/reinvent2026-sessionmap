@@ -17,6 +17,10 @@ import {
 import type { Occurrence } from '../types'
 import { SessionCard } from './SessionCard'
 import { PlanTimeline } from './PlanTimeline'
+import { NowCard } from './NowCard'
+import { buildIcs, downloadIcs, googleCalendarUrl, toEntry } from '../calendar'
+import { DAYS } from '../data/master'
+import type { Position } from '../geo'
 
 type PlanApi = {
   events: PlanEvent[]
@@ -34,6 +38,9 @@ type Props = {
   onToggleStar: (id: string) => void
   armed: PlanKind | null
   onArm: (kind: PlanKind | null) => void
+  /** 全日程の★付きセッション（カレンダー書き出しと「次の行き先」に使う） */
+  starredAll: Occurrence[]
+  geo: { enabled: boolean; pos: Position | null; error: string | null; toggle: (on: boolean) => void }
 }
 
 const TARGET_SESSIONS = 2
@@ -148,7 +155,7 @@ function EventForm({
   )
 }
 
-export function PlanView({ day, sessions, plan, starred, onToggleStar, armed, onArm }: Props) {
+export function PlanView({ day, sessions, plan, starred, onToggleStar, armed, onArm, starredAll, geo }: Props) {
   const [editing, setEditing] = useState<string | null>(null)
   const [mode, setMode] = useState<'timeline' | 'list'>('timeline')
   const [selected, setSelected] = useState<string | null>(null)
@@ -214,6 +221,28 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar, armed, on
 
   return (
     <div className="plan">
+      <NowCard day={day} starredAll={starredAll} events={plan.events} geo={geo} />
+
+      <div className="row cal-actions">
+        <button
+          type="button"
+          className="pill"
+          onClick={() => {
+            const entries = DAYS.flatMap((d) =>
+              buildItems(
+                d.date,
+                starredAll.filter((o) => o.time.date === d.date),
+                plan.events,
+              ).map((it) => toEntry(it, d.date)),
+            )
+            downloadIcs('reinvent2026-myplan.ics', buildIcs(entries))
+          }}
+        >
+          カレンダーに書き出す（全日程・.ics）
+        </button>
+        <span className="cal-actions__hint">Google カレンダー・Apple カレンダーに取り込める。予定ごとの追加は、時間軸の予定を押すと出る</span>
+      </div>
+
       <div className="plan-summary">
         <div className={sessionCount > TARGET_SESSIONS ? 'is-warn' : ''}>
           <b>
@@ -262,6 +291,9 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar, armed, on
         <>
           {selectedItem && (
             <div className="tl-detail" ref={detailRef}>
+              <a className="pill gcal" href={googleCalendarUrl(toEntry(selectedItem, day))} target="_blank" rel="noreferrer">
+                Google カレンダーに追加
+              </a>
               {selectedItem.type === 'session' ? (
                 <SessionCard
                   occ={selectedItem.occ}
