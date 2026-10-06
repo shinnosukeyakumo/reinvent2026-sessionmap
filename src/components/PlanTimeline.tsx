@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { VENUE_BY_ID } from '../data/master'
 import { HOME_VENUE, PLAN_KINDS, distanceKm, fromMin, itemKey, walkMinutes, type PlanItem, type PlanKind } from '../plan'
 
@@ -73,14 +73,25 @@ export function PlanTimeline({ items, selectedKey, onSelect, armed, onPlace }: P
     if (minutes > 0) travels.push({ from: prevEnd, to: prevEnd + minutes, dest: HOME_VENUE, minutes, late: false })
   }
 
-  // 表示範囲は予定の前後を含む「時」単位。予定が無ければ 8〜18 時
-  const starts = [...items.map((i) => i.start), ...travels.map((t) => t.from)]
-  const ends = [...items.map((i) => i.end), ...travels.map((t) => t.to)]
-  const rangeStart = Math.floor(Math.min(8 * 60, ...starts) / 60) * 60
-  const rangeEnd = Math.min(24 * 60, Math.ceil(Math.max(18 * 60, ...ends) / 60) * 60)
+  // 予定が無い日も含めて、常に 0:00〜24:00 を描く。1 日のどこが空いているかを一目で見せるため
+  const rangeStart = 0
+  const rangeEnd = 24 * 60
   const y = (min: number) => (min - rangeStart) * PX
   const hours = Array.from({ length: (rangeEnd - rangeStart) / 60 + 1 }, (_, i) => rangeStart + i * 60)
   const lanes = assignLanes(items)
+
+  // 開いたときは、最初の予定の 1 時間前（予定が無ければ 7:00）まで、サイドバーの中をスクロールする。
+  // スマホはページ全体がスクロールするので、地図から勝手に動かさないよう何もしない
+  const firstStart = items.length ? Math.min(...items.map((i) => i.start), ...travels.map((t) => t.from)) : null
+  const scrollTarget = Math.max(0, (firstStart ?? 8 * 60) - 60)
+  const rootRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const root = rootRef.current
+    const scroller = root?.closest<HTMLElement>('.panel__list')
+    if (!root || !scroller || getComputedStyle(scroller).overflowY !== 'auto') return
+    const offset = root.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop
+    scroller.scrollTo({ top: offset + scrollTarget * PX - 8 })
+  }, [scrollTarget])
   /** 画面上の縦位置を、15 分刻みの時刻に直す */
   const minuteAt = (clientY: number) => {
     const top = bodyRef.current?.getBoundingClientRect().top ?? 0
@@ -89,7 +100,7 @@ export function PlanTimeline({ items, selectedKey, onSelect, armed, onPlace }: P
   }
 
   return (
-    <div className="tl" style={{ height: (rangeEnd - rangeStart) * PX + 16 }}>
+    <div ref={rootRef} className="tl" style={{ height: (rangeEnd - rangeStart) * PX + 16 }}>
       {hours.map((h) => (
         <div key={h} className="tl__hour" style={{ top: y(h) }}>
           <span>{fromMin(h)}</span>

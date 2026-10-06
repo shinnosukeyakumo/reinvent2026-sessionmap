@@ -286,7 +286,7 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar, armed, on
               )}
             </div>
           )}
-          <PlanTimeline items={items} selectedKey={selected} onSelect={setSelected} armed={armed} onPlace={place} />
+          <PlanTimeline key={day} items={items} selectedKey={selected} onSelect={setSelected} armed={armed} onPlace={place} />
         </>
       )}
 
