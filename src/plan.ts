@@ -40,7 +40,7 @@ export type PlanEvent = {
   tentative?: boolean
 }
 
-// 公式アジェンダ（aws.amazon.com/events/reinvent/agenda/、2026-10-06 確認）の主な予定
+// 公式アジェンダ（aws.amazon.com/events/reinvent/agenda/、2026-10-06 確認）の主な予定と、ブログ執筆の枠
 const SEED: PlanEvent[] = [
   { id: 'off-kickoff', date: '2026-11-29', start: '10:00', end: '18:00', kind: 'swag', title: 'Kickoff（バッジ受け取り・スワグ）', place: 'Caesars Forum' },
   { id: 'off-welcome', date: '2026-11-30', start: '16:00', end: '19:00', kind: 'community', title: 'Expo Welcome reception', place: 'Venetian' },
@@ -49,15 +49,29 @@ const SEED: PlanEvent[] = [
   { id: 'kn-wed-pm', date: '2026-12-02', start: '15:00', end: '16:30', kind: 'keynote', title: '基調講演（午後）', place: 'Venetian' },
   { id: 'kn-thu', date: '2026-12-03', start: '08:30', end: '10:00', kind: 'keynote', title: '基調講演', place: 'Venetian' },
   { id: 'off-replay', date: '2026-12-03', start: '19:30', end: '23:59', kind: 'community', title: 're:Play', place: 'Las Vegas Festival Grounds' },
+  // ブログは 1 日 2 本が目標。1 枠 90 分で 1 本の想定で、セッションと公式予定の隙間に置く
+  { id: 'blog-1129-1', date: '2026-11-29', start: '19:00', end: '20:30', kind: 'blog', title: 'ブログ執筆 1 本目（現地の様子・準備）', place: 'MGM Grand' },
+  { id: 'blog-1129-2', date: '2026-11-29', start: '21:00', end: '22:30', kind: 'blog', title: 'ブログ執筆 2 本目（現地の様子・準備）', place: 'MGM Grand' },
+  { id: 'blog-1130-1', date: '2026-11-30', start: '09:00', end: '10:30', kind: 'blog', title: 'ブログ執筆 1 本目', place: 'MGM Grand' },
+  { id: 'blog-1130-2', date: '2026-11-30', start: '13:00', end: '14:30', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'MGM Grand' },
+  { id: 'blog-1201-1', date: '2026-12-01', start: '10:45', end: '12:15', kind: 'blog', title: 'ブログ執筆 1 本目（基調講演の速報）', place: 'Venetian' },
+  { id: 'blog-1201-2', date: '2026-12-01', start: '21:30', end: '23:00', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'MGM Grand' },
+  { id: 'blog-1202-1', date: '2026-12-02', start: '10:15', end: '11:45', kind: 'blog', title: 'ブログ執筆 1 本目（基調講演の速報）', place: 'Venetian' },
+  { id: 'blog-1202-2', date: '2026-12-02', start: '12:30', end: '14:00', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'Venetian' },
+  { id: 'blog-1203-1', date: '2026-12-03', start: '10:45', end: '12:00', kind: 'blog', title: 'ブログ執筆 1 本目（基調講演の速報）', place: 'MGM Grand' },
+  { id: 'blog-1203-2', date: '2026-12-03', start: '15:45', end: '17:15', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'MGM Grand' },
+  { id: 'blog-1204-1', date: '2026-12-04', start: '09:00', end: '10:30', kind: 'blog', title: 'ブログ執筆 1 本目（振り返り）', place: 'MGM Grand' },
+  { id: 'blog-1204-2', date: '2026-12-04', start: '11:00', end: '12:30', kind: 'blog', title: 'ブログ執筆 2 本目（振り返り）', place: 'MGM Grand' },
 ]
 
 const PLAN_KEY = 'sessionmap:plan'
 const SEED_VERSION_KEY = 'sessionmap:seedVersion'
-const SEED_VERSION = 2
+const SEED_VERSION = 3
 
 /**
  * 保存済みの予定に、新しい版の公式予定を取り込む。
- * v1 は基調講演を仮置きしていた。編集されていない仮置き（tentative のまま）だけを捨てる
+ * v1 は基調講演を仮置きしていた。編集されていない仮置き（tentative のまま）だけを捨てる。
+ * v3 でブログ枠を追加した。版が上がるたびに、まだ無い ID の予定だけを足す
  */
 function migrate(events: PlanEvent[], from: number): PlanEvent[] {
   if (from >= SEED_VERSION) return events

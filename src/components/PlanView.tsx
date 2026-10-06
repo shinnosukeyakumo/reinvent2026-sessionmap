@@ -32,6 +32,7 @@ type Props = {
 }
 
 const TARGET_SESSIONS = 2
+const TARGET_BLOGS = 2
 const MIN_GAP = 45 // これ以上空いたら「空き時間」として出す（分）
 
 const placeLabel = (place: string) => VENUE_BY_ID.get(place)?.label ?? place
@@ -141,6 +142,7 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
 
   const sessionCount = sessions.length
   const liveOnly = sessions.filter((o) => LIVE_ONLY_TYPES.has(o.session.type)).length
+  const blogCount = plan.events.filter((e) => e.date === day && e.kind === 'blog').length
   const route = [HOME_VENUE, ...items.map((i) => i.place), HOME_VENUE]
   const totalKm = route.slice(1).reduce((sum, p, i) => sum + (distanceKm(route[i], p) ?? 0), 0)
 
@@ -189,6 +191,13 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
             <span> 本</span>
           </b>
           <small>うち録画なし形式</small>
+        </div>
+        <div className={blogCount < TARGET_BLOGS ? 'is-warn' : ''}>
+          <b>
+            {blogCount}
+            <span> 枠</span>
+          </b>
+          <small>ブログ執筆（目標 {TARGET_BLOGS} 本）</small>
         </div>
         <div>
           <b>
