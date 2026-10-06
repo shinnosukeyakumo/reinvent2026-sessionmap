@@ -3,6 +3,7 @@ import { VENUES, VENUE_BY_ID } from '../data/master'
 import {
   HOME_VENUE,
   buildItems,
+  itemKey,
   LIVE_ONLY_TYPES,
   PLAN_KINDS,
   distanceKm,
@@ -14,6 +15,7 @@ import {
 } from '../plan'
 import type { Occurrence } from '../types'
 import { SessionCard } from './SessionCard'
+import { PlanTimeline } from './PlanTimeline'
 
 type PlanApi = {
   events: PlanEvent[]
@@ -56,11 +58,13 @@ function EventForm({
   initial,
   onSubmit,
   onCancel,
+  onDelete,
 }: {
   day: string
   initial?: PlanEvent
   onSubmit: (e: Omit<PlanEvent, 'id'>) => void
   onCancel?: () => void
+  onDelete?: () => void
 }) {
   const [kind, setKind] = useState<PlanKind>(initial?.kind ?? 'community')
   const [title, setTitle] = useState(initial?.title ?? '')
@@ -126,6 +130,11 @@ function EventForm({
         <button type="submit" className="pill is-active">
           {initial ? '更新' : '予定を追加'}
         </button>
+        {onDelete && (
+          <button type="button" className="link" onClick={onDelete}>
+            削除
+          </button>
+        )}
         {onCancel && (
           <button type="button" className="link" onClick={onCancel}>
             キャンセル
@@ -138,6 +147,8 @@ function EventForm({
 
 export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) {
   const [editing, setEditing] = useState<string | null>(null)
+  const [mode, setMode] = useState<'timeline' | 'list'>('timeline')
+  const [selected, setSelected] = useState<string | null>(null)
   const items = buildItems(day, sessions, plan.events)
 
   const sessionCount = sessions.length
@@ -174,6 +185,7 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
     prevEnd = Math.max(prevEnd ?? 0, it.end)
   }
   const lastPlace = prevPlace
+  const selectedItem = items.find((i) => itemKey(i) === selected) ?? null
 
   return (
     <div className="plan">
@@ -208,15 +220,60 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
         </div>
       </div>
 
-      <div className="move move--home">宿（{placeLabel(HOME_VENUE)}）を出発</div>
+      <div className="seg" role="tablist" aria-label="表示">
+        {(
+          [
+            ['timeline', '時間軸'],
+            ['list', '一覧'],
+          ] as const
+        ).map(([m, label]) => (
+          <button key={m} type="button" className={mode === m ? 'is-active' : ''} onClick={() => setMode(m)}>
+            {label}
+          </button>
+        ))}
+      </div>
 
-      {items.length === 0 && (
+      {mode === 'timeline' && (
+        <>
+          {selectedItem && (
+            <div className="tl-detail">
+              {selectedItem.type === 'session' ? (
+                <SessionCard
+                  occ={selectedItem.occ}
+                  starred={starred.has(selectedItem.occ.session.id)}
+                  onToggleStar={onToggleStar}
+                />
+              ) : (
+                <EventForm
+                  key={selectedItem.ev.id}
+                  day={day}
+                  initial={selectedItem.ev}
+                  onSubmit={(e) => {
+                    plan.update(selectedItem.ev.id, e)
+                    setSelected(null)
+                  }}
+                  onCancel={() => setSelected(null)}
+                  onDelete={() => {
+                    plan.remove(selectedItem.ev.id)
+                    setSelected(null)
+                  }}
+                />
+              )}
+            </div>
+          )}
+          <PlanTimeline items={items} selectedKey={selected} onSelect={setSelected} onQuickAdd={quickAdd} />
+        </>
+      )}
+
+      {mode === 'list' && <div className="move move--home">宿（{placeLabel(HOME_VENUE)}）を出発</div>}
+
+      {mode === 'list' && items.length === 0 && (
         <p className="empty">
           この日の予定はまだない。セッションの ☆ を押すか、下のフォームで予定を足してほしい。
         </p>
       )}
 
-      {rows.map(({ it, from, gap, free }) => {
+      {mode === 'list' && rows.map(({ it, from, gap, free }) => {
         const overlap = gap !== null && gap < 0
         const key = it.type === 'session' ? it.occ.key : it.ev.id
 
@@ -286,8 +343,8 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
         )
       })}
 
-      {items.length > 0 && <Move from={lastPlace} to={HOME_VENUE} gap={null} />}
-      {items.length > 0 && <div className="move move--home">宿に戻る</div>}
+      {mode === 'list' && items.length > 0 && <Move from={lastPlace} to={HOME_VENUE} gap={null} />}
+      {mode === 'list' && items.length > 0 && <div className="move move--home">宿に戻る</div>}
 
       <h3 className="plan-form__title">予定を追加（交流会・ブログ・スワグ回収など）</h3>
       <EventForm key={day} day={day} onSubmit={plan.add} />

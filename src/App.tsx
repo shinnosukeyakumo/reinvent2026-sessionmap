@@ -8,6 +8,19 @@ import { HOME_VENUE, LIVE_ONLY_TYPES, buildItems, usePlan } from './plan'
 import type { Catalog, Occurrence, ViewMode } from './types'
 
 const STAR_KEY = 'sessionmap:starred'
+const PANEL_KEY = 'sessionmap:panelWidth'
+const PANEL_MIN = 360
+
+const clampPanel = (w: number) => Math.round(Math.min(Math.max(w, PANEL_MIN), window.innerWidth * 0.75))
+
+function loadPanelWidth() {
+  try {
+    const w = Number(localStorage.getItem(PANEL_KEY))
+    return w ? clampPanel(w) : 460
+  } catch {
+    return 460
+  }
+}
 
 function loadStarred(): Set<string> {
   try {
@@ -41,6 +54,30 @@ export default function App() {
   const [liveOnly, setLiveOnly] = useState(true)
   const plan = usePlan()
   const [starred, setStarred] = useState<Set<string>>(loadStarred)
+  const [panelWidth, setPanelWidth] = useState(loadPanelWidth)
+
+  // 地図とサイドバーの境目をドラッグして、サイドバーの幅を変える（PC のみ）
+  const startResize = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    const handle = e.currentTarget
+    handle.setPointerCapture(e.pointerId)
+    let latest = panelWidth
+    const move = (ev: PointerEvent) => {
+      latest = clampPanel(window.innerWidth - ev.clientX)
+      setPanelWidth(latest)
+    }
+    const up = () => {
+      handle.removeEventListener('pointermove', move)
+      handle.removeEventListener('pointerup', up)
+      try {
+        localStorage.setItem(PANEL_KEY, String(latest))
+      } catch {
+        // 保存できなくても今回の表示には影響しない
+      }
+    }
+    handle.addEventListener('pointermove', move)
+    handle.addEventListener('pointerup', up)
+  }
 
   useEffect(() => {
     fetch(`${import.meta.env.BASE_URL}data/sessions.json`)
@@ -162,7 +199,7 @@ export default function App() {
         />
       </header>
 
-      <main className="layout">
+      <main className="layout" style={{ '--panel-w': `${panelWidth}px` } as React.CSSProperties}>
         <div className="map-wrap">
           <MapView occurrences={forMap} selectedVenue={venue} onSelectVenue={setVenue} route={route} />
           <div className="map-caption">
@@ -170,6 +207,23 @@ export default function App() {
             <span>マーカーの色はカテゴリ構成比。クリックでホテルを選択</span>
           </div>
         </div>
+
+        <div
+          className="resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="サイドバーの幅を変える"
+          title="ドラッグでサイドバーの幅を変える（ダブルクリックで元に戻す）"
+          onPointerDown={startResize}
+          onDoubleClick={() => {
+            setPanelWidth(460)
+            try {
+              localStorage.removeItem(PANEL_KEY)
+            } catch {
+              // 何もしない
+            }
+          }}
+        />
 
         <aside className="panel">
           <div className="panel__controls">

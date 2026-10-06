@@ -154,3 +154,5 @@ export function buildItems(day: string, sessions: Occurrence[], events: PlanEven
   ]
   return items.sort((a, b) => a.start - b.start || a.end - b.end)
 }
+
+export const itemKey = (it: PlanItem) => (it.type === 'session' ? it.occ.key : it.ev.id)

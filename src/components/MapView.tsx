@@ -75,6 +75,17 @@ function FitRoute({ route }: { route: string[] }) {
   return null
 }
 
+/** サイドバーの幅を変えたとき、地図の描画範囲を合わせ直す */
+function InvalidateOnResize() {
+  const map = useMap()
+  useEffect(() => {
+    const ro = new ResizeObserver(() => map.invalidateSize())
+    ro.observe(map.getContainer())
+    return () => ro.disconnect()
+  }, [map])
+  return null
+}
+
 export function MapView({ occurrences, selectedVenue, onSelectVenue, route = [] }: Props) {
   const byVenue = useMemo(() => {
     const m = new Map<string, Occurrence[]>()
@@ -99,6 +110,7 @@ export function MapView({ occurrences, selectedVenue, onSelectVenue, route = [] 
       />
       <FlyToSelected selectedVenue={selectedVenue} />
       <FitRoute route={route} />
+      <InvalidateOnResize />
       {route.length > 2 && (
         <Polyline
           positions={route
