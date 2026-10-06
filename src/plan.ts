@@ -40,20 +40,38 @@ export type PlanEvent = {
   tentative?: boolean
 }
 
-// 公式の基調講演スケジュールは 2026/10 時点で未発表。例年の形で仮置きする
+// 公式アジェンダ（aws.amazon.com/events/reinvent/agenda/、2026-10-06 確認）の主な予定
 const SEED: PlanEvent[] = [
-  { id: 'kn-mon', date: '2026-11-30', start: '19:30', end: '21:00', kind: 'keynote', title: 'Monday Night Live', place: 'Venetian', tentative: true },
-  { id: 'kn-tue', date: '2026-12-01', start: '08:30', end: '10:30', kind: 'keynote', title: 'CEO 基調講演', place: 'Venetian', tentative: true },
-  { id: 'kn-wed', date: '2026-12-02', start: '08:30', end: '10:00', kind: 'keynote', title: '基調講演', place: 'Venetian', tentative: true },
-  { id: 'kn-thu', date: '2026-12-03', start: '08:30', end: '10:00', kind: 'keynote', title: '基調講演', place: 'Venetian', tentative: true },
+  { id: 'off-kickoff', date: '2026-11-29', start: '10:00', end: '18:00', kind: 'swag', title: 'Kickoff（バッジ受け取り・スワグ）', place: 'Caesars Forum' },
+  { id: 'off-welcome', date: '2026-11-30', start: '16:00', end: '19:00', kind: 'community', title: 'Expo Welcome reception', place: 'Venetian' },
+  { id: 'kn-tue', date: '2026-12-01', start: '08:30', end: '10:30', kind: 'keynote', title: '基調講演（CEO Matt Garman）', place: 'Venetian' },
+  { id: 'kn-wed', date: '2026-12-02', start: '08:30', end: '10:00', kind: 'keynote', title: '基調講演', place: 'Venetian' },
+  { id: 'kn-wed-pm', date: '2026-12-02', start: '15:00', end: '16:30', kind: 'keynote', title: '基調講演（午後）', place: 'Venetian' },
+  { id: 'kn-thu', date: '2026-12-03', start: '08:30', end: '10:00', kind: 'keynote', title: '基調講演', place: 'Venetian' },
+  { id: 'off-replay', date: '2026-12-03', start: '19:30', end: '23:59', kind: 'community', title: 're:Play', place: 'Las Vegas Festival Grounds' },
 ]
 
 const PLAN_KEY = 'sessionmap:plan'
+const SEED_VERSION_KEY = 'sessionmap:seedVersion'
+const SEED_VERSION = 2
+
+/**
+ * 保存済みの予定に、新しい版の公式予定を取り込む。
+ * v1 は基調講演を仮置きしていた。編集されていない仮置き（tentative のまま）だけを捨てる
+ */
+function migrate(events: PlanEvent[], from: number): PlanEvent[] {
+  if (from >= SEED_VERSION) return events
+  const kept = events.filter((e) => !(e.id.startsWith('kn-') && e.tentative))
+  const ids = new Set(kept.map((e) => e.id))
+  return [...kept, ...SEED.filter((e) => !ids.has(e.id))]
+}
 
 function loadPlan(): PlanEvent[] {
   try {
     const raw = localStorage.getItem(PLAN_KEY)
-    return raw ? JSON.parse(raw) : SEED
+    if (!raw) return SEED
+    const from = Number(localStorage.getItem(SEED_VERSION_KEY) ?? 1)
+    return migrate(JSON.parse(raw), from)
   } catch {
     return SEED
   }
@@ -65,6 +83,7 @@ export function usePlan() {
   useEffect(() => {
     try {
       localStorage.setItem(PLAN_KEY, JSON.stringify(events))
+      localStorage.setItem(SEED_VERSION_KEY, String(SEED_VERSION))
     } catch {
       // 保存できない環境でも画面上の操作は続けられる
     }

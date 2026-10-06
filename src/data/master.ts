@@ -90,6 +90,7 @@ export const UNKNOWN_TOPIC: Topic = { id: '', label: '未分類', color: '#64748
 export const topicOf = (id: string | undefined) => (id && TOPIC_BY_ID.get(id)) || UNKNOWN_TOPIC
 
 export const DAYS = [
+  { date: '2026-11-29', label: '11/29', week: '日' },
   { date: '2026-11-30', label: '11/30', week: '月' },
   { date: '2026-12-01', label: '12/1', week: '火' },
   { date: '2026-12-02', label: '12/2', week: '水' },

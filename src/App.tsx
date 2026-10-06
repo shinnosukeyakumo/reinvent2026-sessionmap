@@ -28,7 +28,8 @@ export default function App() {
   const [catalog, setCatalog] = useState<Catalog | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const [day, setDay] = useState(DAYS[0].date)
+  // 11/29（日）はセッションが無い前日なので、初期表示は初日の 11/30 にする
+  const [day, setDay] = useState('2026-11-30')
   const [view, setView] = useState<ViewMode>('venue')
   const [venue, setVenue] = useState<string | null>(null)
   const [slot, setSlot] = useState<string | null>(null)
