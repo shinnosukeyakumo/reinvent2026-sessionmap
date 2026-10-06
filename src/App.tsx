@@ -4,7 +4,8 @@ import { MapView } from './components/MapView'
 import { CategoryView, TimeView, VenueView } from './components/Views'
 import { PlanView } from './components/PlanView'
 import { ReservationCopy } from './components/ReservationCopy'
-import { HOME_VENUE, LIVE_ONLY_TYPES, buildItems, usePlan } from './plan'
+import { PlanPalette } from './components/PlanPalette'
+import { HOME_VENUE, LIVE_ONLY_TYPES, buildItems, usePlan, type PlanKind } from './plan'
 import type { Catalog, Occurrence, ViewMode } from './types'
 
 const STAR_KEY = 'sessionmap:starred'
@@ -53,6 +54,8 @@ export default function App() {
   // 録画が残らない形式（ワークショップ等）を優先して探したいので、既定でオン
   const [liveOnly, setLiveOnly] = useState(true)
   const plan = usePlan()
+  // マイプランで、タップで置くために選んでいる部品
+  const [armed, setArmed] = useState<PlanKind | null>(null)
   const [starred, setStarred] = useState<Set<string>>(loadStarred)
   const [panelWidth, setPanelWidth] = useState(loadPanelWidth)
 
@@ -243,9 +246,7 @@ export default function App() {
             </div>
 
             {view === 'plan' ? (
-              <div className="summary">
-                ☆ を付けたセッションと、基調講演・交流会などの予定を 1 日の流れで並べる。移動は宿（MGM Grand）起点。
-              </div>
+              <PlanPalette armed={armed} onArm={setArmed} />
             ) : (
             <>
             <div className="row scroll-x" aria-label="時間枠">
@@ -335,7 +336,15 @@ export default function App() {
             {catalog && view === 'plan' && (
               <>
                 <ReservationCopy occurrences={starredAll} />
-                <PlanView day={day} sessions={planSessions} plan={plan} starred={starred} onToggleStar={toggleStar} />
+                <PlanView
+                  day={day}
+                  sessions={planSessions}
+                  plan={plan}
+                  starred={starred}
+                  onToggleStar={toggleStar}
+                  armed={armed}
+                  onArm={setArmed}
+                />
               </>
             )}
           </div>

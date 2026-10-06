@@ -916,6 +916,18 @@ details[open] > summary.group__head::after {
 
 .tl-detail {
   margin-bottom: 8px;
+  /* PC では時間軸をスクロールしても編集欄が見えるよう、上部に固定する */
+  position: sticky;
+  top: -8px;
+  z-index: 8;
+  background: var(--surface);
+  padding-top: 8px;
+}
+
+@media (max-width: 860px) {
+  .tl-detail {
+    position: static;
+  }
 }
 
 .tl {
@@ -963,12 +975,6 @@ details[open] > summary.group__head::after {
   gap: 4px;
   overflow: hidden;
   background: repeating-linear-gradient(-45deg, transparent 0 8px, rgb(255 255 255 / 0.02) 8px 16px);
-}
-
-.tl__quick {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
 }
 
 .tl__travel {
@@ -1044,4 +1050,68 @@ details[open] > summary.group__head::after {
 
 .tl__item.is-short .tl__place {
   display: none;
+}
+
+/* ---------- plan palette (drag / tap to place) ---------- */
+.palette__items {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.palette__item {
+  border: 1px solid var(--c);
+  background: color-mix(in srgb, var(--c) 16%, var(--surface-2));
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: grab;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.palette__item:active {
+  cursor: grabbing;
+}
+
+.palette__item.is-armed {
+  background: var(--c);
+  color: #0b0d17;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.palette__hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.tl__body.is-armed {
+  cursor: crosshair;
+  outline: 1px dashed var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.tl__guide {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  border-top: 2px solid var(--accent);
+  pointer-events: none;
+}
+
+.tl__guide span {
+  position: absolute;
+  right: 0;
+  top: -10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #120a26;
+  background: var(--accent);
+  border-radius: 4px;
+  padding: 0 6px;
 }

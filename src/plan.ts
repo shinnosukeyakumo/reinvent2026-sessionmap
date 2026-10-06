@@ -28,6 +28,10 @@ export const PLAN_KINDS: Record<PlanKind, { label: string; color: string }> = {
   other: { label: 'その他', color: '#94a3b8' },
 }
 
+/** 時間軸に置ける部品と、置いたときの長さ（分） */
+export const PLACEABLE_KINDS: PlanKind[] = ['blog', 'community', 'swag']
+export const DEFAULT_MINUTES: Record<PlanKind, number> = { keynote: 90, blog: 90, community: 120, swag: 60, other: 60 }
+
 export type PlanEvent = {
   id: string
   date: string
@@ -103,8 +107,11 @@ export function usePlan() {
     }
   }, [events])
 
-  const add = (e: Omit<PlanEvent, 'id'>) =>
-    setEvents((prev) => [...prev, { ...e, id: crypto.randomUUID() }])
+  const add = (e: Omit<PlanEvent, 'id'>) => {
+    const id = crypto.randomUUID()
+    setEvents((prev) => [...prev, { ...e, id }])
+    return id
+  }
   const update = (id: string, patch: Partial<PlanEvent>) =>
     setEvents((prev) => prev.map((e) => (e.id === id ? { ...e, ...patch } : e)))
   const remove = (id: string) => setEvents((prev) => prev.filter((e) => e.id !== id))

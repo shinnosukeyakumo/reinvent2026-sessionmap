@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import { VENUE_BY_ID } from '../data/master'
 import { HOME_VENUE, PLAN_KINDS, distanceKm, fromMin, itemKey, walkMinutes, type PlanItem, type PlanKind } from '../plan'
 
@@ -12,7 +13,9 @@ type Props = {
   items: PlanItem[]
   selectedKey: string | null
   onSelect: (key: string | null) => void
-  onQuickAdd: (kind: PlanKind, free: FreeSlot) => void
+  /** 選択中の部品（スマホのタップ配置用） */
+  armed: PlanKind | null
+  onPlace: (kind: PlanKind, startMin: number) => void
 }
 
 const placeLabel = (place: string) => VENUE_BY_ID.get(place)?.label ?? place
@@ -46,7 +49,10 @@ function assignLanes(items: PlanItem[]) {
   return lanes
 }
 
-export function PlanTimeline({ items, selectedKey, onSelect, onQuickAdd }: Props) {
+export function PlanTimeline({ items, selectedKey, onSelect, armed, onPlace }: Props) {
+  const bodyRef = useRef<HTMLDivElement>(null)
+  const [guide, setGuide] = useState<number | null>(null)
+
   // 予定どうしの間にある「移動」と「空き」を先に計算する。移動は到着時刻から逆算して置く
   type Travel = { from: number; to: number; dest: string; minutes: number; late: boolean }
   const travels: Travel[] = []
@@ -75,6 +81,12 @@ export function PlanTimeline({ items, selectedKey, onSelect, onQuickAdd }: Props
   const y = (min: number) => (min - rangeStart) * PX
   const hours = Array.from({ length: (rangeEnd - rangeStart) / 60 + 1 }, (_, i) => rangeStart + i * 60)
   const lanes = assignLanes(items)
+  /** 画面上の縦位置を、15 分刻みの時刻に直す */
+  const minuteAt = (clientY: number) => {
+    const top = bodyRef.current?.getBoundingClientRect().top ?? 0
+    const raw = rangeStart + (clientY - top) / PX
+    return Math.min(Math.max(Math.round(raw / 15) * 15, rangeStart), rangeEnd - 15)
+  }
 
   return (
     <div className="tl" style={{ height: (rangeEnd - rangeStart) * PX + 16 }}>
@@ -84,24 +96,40 @@ export function PlanTimeline({ items, selectedKey, onSelect, onQuickAdd }: Props
         </div>
       ))}
 
-      <div className="tl__body">
+      <div
+        ref={bodyRef}
+        className={`tl__body${armed ? ' is-armed' : ''}`}
+        onDragOver={(e) => {
+          if (!e.dataTransfer.types.includes('text/plan-kind')) return
+          e.preventDefault()
+          e.dataTransfer.dropEffect = 'copy'
+          setGuide(minuteAt(e.clientY))
+        }}
+        onDragLeave={() => setGuide(null)}
+        onDrop={(e) => {
+          const kind = e.dataTransfer.getData('text/plan-kind') as PlanKind
+          setGuide(null)
+          if (!kind) return
+          e.preventDefault()
+          onPlace(kind, minuteAt(e.clientY))
+        }}
+        onMouseMove={(e) => armed && setGuide(minuteAt(e.clientY))}
+        onMouseLeave={() => armed && setGuide(null)}
+        onClick={(e) => {
+          if (!armed) return
+          onPlace(armed, minuteAt(e.clientY))
+          setGuide(null)
+        }}
+      >
+        {guide !== null && (
+          <div className="tl__guide" style={{ top: y(guide) }}>
+            <span>{fromMin(guide)}</span>
+          </div>
+        )}
         {frees.map((f) => (
           <div key={`free-${f.from}`} className="tl__free" style={{ top: y(f.from), height: (f.depart - f.from) * PX }}>
             <span>
               空き {fromMin(f.from)}–{fromMin(f.depart)}（{f.depart - f.from} 分）
-            </span>
-            <span className="tl__quick">
-              {(['blog', 'community', 'swag'] as PlanKind[]).map((k) => (
-                <button
-                  key={k}
-                  type="button"
-                  className="chip"
-                  style={{ '--c': PLAN_KINDS[k].color } as React.CSSProperties}
-                  onClick={() => onQuickAdd(k, f)}
-                >
-                  + {PLAN_KINDS[k].label}
-                </button>
-              ))}
             </span>
           </div>
         ))}
@@ -141,7 +169,12 @@ export function PlanTimeline({ items, selectedKey, onSelect, onQuickAdd }: Props
                   '--c': color,
                 } as React.CSSProperties
               }
-              onClick={() => onSelect(selectedKey === key ? null : key)}
+              onClick={(e) => {
+                // 配置モード中は、予定の上をタップしてもその時刻に置く
+                if (armed) return
+                e.stopPropagation()
+                onSelect(selectedKey === key ? null : key)
+              }}
             >
               <span className="tl__meta">
                 {fromMin(it.start)}–{fromMin(it.end)} · {label}

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { VENUES, VENUE_BY_ID } from '../data/master'
 import {
+  DEFAULT_MINUTES,
   HOME_VENUE,
   buildItems,
   itemKey,
@@ -19,7 +20,7 @@ import { PlanTimeline } from './PlanTimeline'
 
 type PlanApi = {
   events: PlanEvent[]
-  add: (e: Omit<PlanEvent, 'id'>) => void
+  add: (e: Omit<PlanEvent, 'id'>) => string
   update: (id: string, patch: Partial<PlanEvent>) => void
   remove: (id: string) => void
 }
@@ -31,6 +32,8 @@ type Props = {
   plan: PlanApi
   starred: Set<string>
   onToggleStar: (id: string) => void
+  armed: PlanKind | null
+  onArm: (kind: PlanKind | null) => void
 }
 
 const TARGET_SESSIONS = 2
@@ -145,10 +148,16 @@ function EventForm({
   )
 }
 
-export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) {
+export function PlanView({ day, sessions, plan, starred, onToggleStar, armed, onArm }: Props) {
   const [editing, setEditing] = useState<string | null>(null)
   const [mode, setMode] = useState<'timeline' | 'list'>('timeline')
   const [selected, setSelected] = useState<string | null>(null)
+  const detailRef = useRef<HTMLDivElement>(null)
+
+  // 予定を置いたり選んだりしたら、編集欄が画面に入るようにする（スマホではページ全体がスクロールするため）
+  useEffect(() => {
+    if (selected) detailRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [selected])
   const items = buildItems(day, sessions, plan.events)
 
   const sessionCount = sessions.length
@@ -170,6 +179,22 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
       end: fromMin(end),
       place: free.place,
     })
+  }
+
+  // 時間軸に部品を置く。場所は直前の予定の会場を引き継ぎ、置いたらすぐ編集欄を開いて時刻を詰められるようにする
+  const place = (kind: PlanKind, start: number) => {
+    const before = items.filter((i) => i.start <= start).sort((a, b) => b.end - a.end)[0]
+    const end = Math.min(start + DEFAULT_MINUTES[kind], 23 * 60 + 59)
+    const id = plan.add({
+      date: day,
+      kind,
+      title: PLAN_KINDS[kind].label,
+      start: fromMin(start),
+      end: fromMin(end),
+      place: before?.place ?? HOME_VENUE,
+    })
+    onArm(null)
+    setSelected(id)
   }
 
   // 各予定の直前に出す「空き時間」「重なり」「移動」を先に計算しておく
@@ -236,7 +261,7 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
       {mode === 'timeline' && (
         <>
           {selectedItem && (
-            <div className="tl-detail">
+            <div className="tl-detail" ref={detailRef}>
               {selectedItem.type === 'session' ? (
                 <SessionCard
                   occ={selectedItem.occ}
@@ -261,7 +286,7 @@ export function PlanView({ day, sessions, plan, starred, onToggleStar }: Props) 
               )}
             </div>
           )}
-          <PlanTimeline items={items} selectedKey={selected} onSelect={setSelected} onQuickAdd={quickAdd} />
+          <PlanTimeline items={items} selectedKey={selected} onSelect={setSelected} armed={armed} onPlace={place} />
         </>
       )}
 
