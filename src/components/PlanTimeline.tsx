@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { VENUE_BY_ID } from '../data/master'
+import { TypeBadge } from './TypeBadge'
 import { HOME_VENUE, PLAN_KINDS, RESERVED_CODES, distanceKm, fromMin, itemKey, walkMinutes, type PlanItem, type PlanKind } from '../plan'
 
 /** 1 分あたりの高さ（px）。60 分 = 72px */
@@ -162,10 +163,8 @@ export function PlanTimeline({ items, selectedKey, onSelect, armed, onPlace }: P
           const height = Math.max((it.end - it.start) * PX, 24)
           const color =
             it.type === 'session' ? VENUE_BY_ID.get(it.place)?.color ?? '#888' : PLAN_KINDS[it.ev.kind].color
-          const label =
-            it.type === 'session'
-              ? `${RESERVED_CODES.has(it.occ.session.code) ? '予約済み · ' : ''}${it.occ.session.type}`
-              : PLAN_KINDS[it.ev.kind].label
+          const label = it.type === 'session' ? null : PLAN_KINDS[it.ev.kind].label
+          const reserved = it.type === 'session' && RESERVED_CODES.has(it.occ.session.code)
           const title = it.type === 'session' ? it.occ.session.title : it.ev.title
           const code = it.type === 'session' ? it.occ.session.code : null
           const room = it.type === 'session' ? it.occ.time.room : ''
@@ -191,7 +190,10 @@ export function PlanTimeline({ items, selectedKey, onSelect, armed, onPlace }: P
               }}
             >
               <span className="tl__meta">
-                {fromMin(it.start)}–{fromMin(it.end)} · {label}
+                {fromMin(it.start)}–{fromMin(it.end)}
+                {it.type === 'session' && <TypeBadge type={it.occ.session.type} />}
+                {reserved && <span className="badge badge--reserved">予約済み</span>}
+                {label && ` · ${label}`}
                 {code && <b> {code}</b>}
               </span>
               <span className="tl__title">{title}</span>

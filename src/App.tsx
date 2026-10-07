@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DAYS, TOPICS, VENUE_BY_ID } from './data/master'
+import { DAYS, TOPICS, VENUE_BY_ID, typeMeta } from './data/master'
 import { MapView } from './components/MapView'
 import { CategoryView, TimeView, VenueView } from './components/Views'
 import { PlanView } from './components/PlanView'
@@ -312,7 +312,9 @@ export default function App() {
               <select value={type} onChange={(e) => setType(e.target.value)} aria-label="セッション形式">
                 <option value="">すべての形式</option>
                 {types.map((t) => (
-                  <option key={t}>{t}</option>
+                  <option key={t} value={t}>
+                    {typeMeta(t).label}（{t}）
+                  </option>
                 ))}
               </select>
               <label className="toggle" title="Workshop / Builders' session / Chalk talk / Lab など。例年の傾向にもとづく分類で、2026 年の録画方針は未確認">

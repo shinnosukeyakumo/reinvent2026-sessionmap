@@ -1218,3 +1218,27 @@ details[open] > summary.group__head::after {
   color: #0b0d17;
   font-weight: 800;
 }
+
+.type-badge {
+  display: inline-block;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0b0d17;
+  background: var(--c);
+  white-space: nowrap;
+}
+
+.tl__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tl__meta .badge--reserved {
+  font-size: 10.5px;
+  padding: 0 5px;
+  border-radius: 4px;
+}

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { DAYS, VENUE_BY_ID } from '../data/master'
+import { TypeBadge } from './TypeBadge'
 import { haversineKm, nowInVegas, type Position } from '../geo'
 import { PLAN_KINDS, buildItems, fromMin, walkMinutes, type PlanEvent } from '../plan'
 import type { Occurrence } from '../types'
@@ -73,7 +74,7 @@ export function NowCard({ day, starredAll, events, geo }: Props) {
             <span className="now__time">
               {fromMin(next.start)}–{fromMin(next.end)}
             </span>
-            <span className="badge">{kind}</span>
+            {next.type === 'session' ? <TypeBadge type={next.occ.session.type} /> : <span className="badge">{kind}</span>}
           </div>
           <div className="now__title">{title}</div>
           <div className="now__place">

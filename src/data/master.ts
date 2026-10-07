@@ -97,3 +97,19 @@ export const DAYS = [
   { date: '2026-12-03', label: '12/3', week: '木' },
   { date: '2026-12-04', label: '12/4', week: '金' },
 ]
+
+/** セッション形式の日本語名・色・説明（カードと時間軸の印に使う） */
+export const TYPE_META: Record<string, { label: string; color: string; note: string }> = {
+  Workshop: { label: 'ワークショップ', color: '#f59e0b', note: '手を動かす。2 時間前後で PC が必要' },
+  "Builders' session": { label: 'ビルダーズセッション', color: '#10b981', note: '少人数で講師と一緒に手を動かす' },
+  'Chalk talk': { label: 'チョークトーク', color: '#38bdf8', note: '少人数でホワイトボードを使って議論する' },
+  'Code talk': { label: 'コードトーク', color: '#a78bfa', note: '実際のコードを見ながら解説を聞く' },
+  'Breakout session': { label: '講演', color: '#94a3b8', note: '大きな部屋で講演を聞く' },
+  'Lightning talk': { label: 'ライトニングトーク', color: '#cbd5e1', note: '20 分ほどの短い講演' },
+  Lab: { label: 'ラボ', color: '#f472b6', note: '用意された手順で手を動かす' },
+  Bootcamp: { label: 'ブートキャンプ', color: '#fb7185', note: '数時間かけて集中して学ぶ' },
+  'Gamified learning': { label: 'ゲーム形式', color: '#facc15', note: 'GameDay や Jam など、チームで課題を解く' },
+  'Exam prep': { label: '試験対策', color: '#e2e8f0', note: '認定試験の対策' },
+}
+
+export const typeMeta = (type: string) => TYPE_META[type] ?? { label: type, color: '#94a3b8', note: '' }
