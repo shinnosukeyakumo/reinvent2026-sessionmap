@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DAYS, TOPICS, VENUE_BY_ID } from './data/master'
 import { MapView } from './components/MapView'
 import { CategoryView, TimeView, VenueView } from './components/Views'
@@ -6,7 +6,7 @@ import { PlanView } from './components/PlanView'
 import { ReservationCopy } from './components/ReservationCopy'
 import { PlanPalette } from './components/PlanPalette'
 import { useGeolocation } from './geo'
-import { HOME_VENUE, LIVE_ONLY_TYPES, buildItems, usePlan, type PlanKind } from './plan'
+import { HOME_VENUE, LIVE_ONLY_TYPES, RESERVED_CODES, buildItems, usePlan, type PlanKind } from './plan'
 import type { Catalog, Occurrence, ViewMode } from './types'
 
 const STAR_KEY = 'sessionmap:starred'
@@ -173,11 +173,16 @@ export default function App() {
   const forMap = useMemo(() => (slot ? matched.filter((o) => o.time.start === slot) : matched), [matched, slot])
   const forList = useMemo(() => (venue ? forMap.filter((o) => o.time.venue === venue) : forMap), [forMap, venue])
 
-  const starredAll = useMemo(() => allOccurrences.filter((o) => starred.has(o.session.id)), [allOccurrences, starred])
+  // マイプランに並べるのは、☆ を付けたものと予約済みのもの
+  const inPlan = useCallback(
+    (o: Occurrence) => starred.has(o.session.id) || RESERVED_CODES.has(o.session.code),
+    [starred],
+  )
+  const starredAll = useMemo(() => allOccurrences.filter(inPlan), [allOccurrences, inPlan])
   // マイプランは絞り込み条件に関係なく、その日の★付きセッションをすべて出す
   const planSessions = useMemo(
-    () => allOccurrences.filter((o) => o.time.date === day && starred.has(o.session.id)),
-    [allOccurrences, day, starred],
+    () => allOccurrences.filter((o) => o.time.date === day && inPlan(o)),
+    [allOccurrences, day, inPlan],
   )
   const route = useMemo(
     () =>

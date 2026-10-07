@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { VENUE_BY_ID, topicOf } from '../data/master'
-import { HOME_VENUE, distanceKm } from '../plan'
+import { HOME_VENUE, RESERVED_CODES, distanceKm } from '../plan'
 import type { Occurrence } from '../types'
 
 type Props = {
@@ -28,6 +28,7 @@ export function SessionCard({ occ, starred, onToggleStar, hide = {} }: Props) {
             {t.start}–{t.end}
           </span>
         )}
+        {RESERVED_CODES.has(s.code) && <span className="badge badge--reserved">予約済み</span>}
         {s.isNew && <span className="badge badge--new">NEW</span>}
         <span className="card__code">{s.code}</span>
         <span className="badge">{s.type}</span>

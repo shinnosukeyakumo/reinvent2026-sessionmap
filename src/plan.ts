@@ -28,6 +28,18 @@ export const PLAN_KINDS: Record<PlanKind, { label: string; color: string }> = {
   other: { label: 'その他', color: '#94a3b8' },
 }
 
+/** 公式カタログで予約できたセッション（2026-10-07 時点）。どの端末でも最初からマイプランに並べる */
+export const RESERVED_CODES = new Set([
+  'AIM436-R',
+  'COP401-R',
+  'COM317-R1',
+  'MAM322-R1',
+  'OPN304-R',
+  'AIM440',
+  'DAT408',
+  'MAM413-R1',
+])
+
 /** 時間軸に置ける部品と、置いたときの長さ（分） */
 export const PLACEABLE_KINDS: PlanKind[] = ['blog', 'community', 'swag']
 export const DEFAULT_MINUTES: Record<PlanKind, number> = { keynote: 90, blog: 90, community: 120, swag: 60, other: 60 }
@@ -56,30 +68,44 @@ const SEED: PlanEvent[] = [
   // ブログは 1 日 2 本が目標。1 枠 90 分で 1 本の想定で、セッションと公式予定の隙間に置く
   { id: 'blog-1129-1', date: '2026-11-29', start: '19:00', end: '20:30', kind: 'blog', title: 'ブログ執筆 1 本目（現地の様子・準備）', place: 'MGM Grand' },
   { id: 'blog-1129-2', date: '2026-11-29', start: '21:00', end: '22:30', kind: 'blog', title: 'ブログ執筆 2 本目（現地の様子・準備）', place: 'MGM Grand' },
-  { id: 'blog-1130-1', date: '2026-11-30', start: '09:00', end: '10:30', kind: 'blog', title: 'ブログ執筆 1 本目', place: 'MGM Grand' },
+  { id: 'blog-1130-1', date: '2026-11-30', start: '08:00', end: '09:45', kind: 'blog', title: 'ブログ執筆 1 本目', place: 'MGM Grand' },
   { id: 'blog-1130-2', date: '2026-11-30', start: '13:00', end: '14:30', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'MGM Grand' },
   { id: 'blog-1201-1', date: '2026-12-01', start: '10:45', end: '12:15', kind: 'blog', title: 'ブログ執筆 1 本目（基調講演の速報）', place: 'Venetian' },
   { id: 'blog-1201-2', date: '2026-12-01', start: '21:30', end: '23:00', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'MGM Grand' },
   { id: 'blog-1202-1', date: '2026-12-02', start: '10:15', end: '11:45', kind: 'blog', title: 'ブログ執筆 1 本目（基調講演の速報）', place: 'Venetian' },
-  { id: 'blog-1202-2', date: '2026-12-02', start: '12:30', end: '14:00', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'Venetian' },
-  { id: 'blog-1203-1', date: '2026-12-03', start: '10:45', end: '12:00', kind: 'blog', title: 'ブログ執筆 1 本目（基調講演の速報）', place: 'MGM Grand' },
+  { id: 'blog-1202-2', date: '2026-12-02', start: '16:45', end: '18:15', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'Venetian' },
+  { id: 'blog-1203-1', date: '2026-12-03', start: '10:45', end: '11:45', kind: 'blog', title: 'ブログ執筆 1 本目（基調講演の速報）', place: 'MGM Grand' },
   { id: 'blog-1203-2', date: '2026-12-03', start: '15:45', end: '17:15', kind: 'blog', title: 'ブログ執筆 2 本目', place: 'MGM Grand' },
-  { id: 'blog-1204-1', date: '2026-12-04', start: '09:00', end: '10:30', kind: 'blog', title: 'ブログ執筆 1 本目（振り返り）', place: 'MGM Grand' },
-  { id: 'blog-1204-2', date: '2026-12-04', start: '11:00', end: '12:30', kind: 'blog', title: 'ブログ執筆 2 本目（振り返り）', place: 'MGM Grand' },
+  { id: 'blog-1204-1', date: '2026-12-04', start: '08:45', end: '10:15', kind: 'blog', title: 'ブログ執筆 1 本目（振り返り）', place: 'Wynn/Encore' },
+  { id: 'blog-1204-2', date: '2026-12-04', start: '13:30', end: '15:00', kind: 'blog', title: 'ブログ執筆 2 本目（振り返り）', place: 'MGM Grand' },
 ]
 
 const PLAN_KEY = 'sessionmap:plan'
 const SEED_VERSION_KEY = 'sessionmap:seedVersion'
-const SEED_VERSION = 3
+const SEED_VERSION = 4
+
+/** v3 までのブログ枠の初期値。これと同じまま（未編集）の枠だけを、v4 の初期値に差し替える */
+const OLD_BLOG_SLOTS: Record<string, string> = {
+  'blog-1130-1': '09:00-10:30@MGM Grand',
+  'blog-1202-2': '12:30-14:00@Venetian',
+  'blog-1203-1': '10:45-12:00@MGM Grand',
+  'blog-1204-1': '09:00-10:30@MGM Grand',
+  'blog-1204-2': '11:00-12:30@MGM Grand',
+}
 
 /**
  * 保存済みの予定に、新しい版の公式予定を取り込む。
  * v1 は基調講演を仮置きしていた。編集されていない仮置き（tentative のまま）だけを捨てる。
  * v3 でブログ枠を追加した。版が上がるたびに、まだ無い ID の予定だけを足す
+ * v4 で予約に合わせてブログ枠の時刻を変えた。未編集の枠だけを差し替える
  */
 function migrate(events: PlanEvent[], from: number): PlanEvent[] {
   if (from >= SEED_VERSION) return events
-  const kept = events.filter((e) => !(e.id.startsWith('kn-') && e.tentative))
+  const seedById = new Map(SEED.map((e) => [e.id, e]))
+  const kept = events
+    .filter((e) => !(e.id.startsWith('kn-') && e.tentative))
+    // v4: 予約したセッションとぶつかるブログ枠を、未編集なら新しい初期値に置き換える
+    .map((e) => (OLD_BLOG_SLOTS[e.id] === `${e.start}-${e.end}@${e.place}` ? seedById.get(e.id) ?? e : e))
   const ids = new Set(kept.map((e) => e.id))
   return [...kept, ...SEED.filter((e) => !ids.has(e.id))]
 }

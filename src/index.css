@@ -1211,3 +1211,10 @@ details[open] > summary.group__head::after {
   color: #0b0d17;
   font-weight: 800;
 }
+
+.badge--reserved {
+  background: #4ade80;
+  border-color: #4ade80;
+  color: #0b0d17;
+  font-weight: 800;
+}

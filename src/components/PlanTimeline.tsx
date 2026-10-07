@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { VENUE_BY_ID } from '../data/master'
-import { HOME_VENUE, PLAN_KINDS, distanceKm, fromMin, itemKey, walkMinutes, type PlanItem, type PlanKind } from '../plan'
+import { HOME_VENUE, PLAN_KINDS, RESERVED_CODES, distanceKm, fromMin, itemKey, walkMinutes, type PlanItem, type PlanKind } from '../plan'
 
 /** 1 分あたりの高さ（px）。60 分 = 72px */
 const PX = 1.2
@@ -162,7 +162,10 @@ export function PlanTimeline({ items, selectedKey, onSelect, armed, onPlace }: P
           const height = Math.max((it.end - it.start) * PX, 24)
           const color =
             it.type === 'session' ? VENUE_BY_ID.get(it.place)?.color ?? '#888' : PLAN_KINDS[it.ev.kind].color
-          const label = it.type === 'session' ? it.occ.session.type : PLAN_KINDS[it.ev.kind].label
+          const label =
+            it.type === 'session'
+              ? `${RESERVED_CODES.has(it.occ.session.code) ? '予約済み · ' : ''}${it.occ.session.type}`
+              : PLAN_KINDS[it.ev.kind].label
           const title = it.type === 'session' ? it.occ.session.title : it.ev.title
           const code = it.type === 'session' ? it.occ.session.code : null
           const room = it.type === 'session' ? it.occ.time.room : ''
