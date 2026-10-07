@@ -65,6 +65,12 @@ const SEED: PlanEvent[] = [
   { id: 'kn-wed-pm', date: '2026-12-02', start: '15:00', end: '16:30', kind: 'keynote', title: '基調講演（午後）', place: 'Venetian' },
   { id: 'kn-thu', date: '2026-12-03', start: '08:30', end: '10:00', kind: 'keynote', title: '基調講演', place: 'Venetian' },
   { id: 'off-replay', date: '2026-12-03', start: '19:30', end: '23:59', kind: 'community', title: 're:Play', place: 'Las Vegas Festival Grounds' },
+  // 夜は Venetian のレセプションから Noodle Asia へ流れて、日本人参加者と交流する（終わりの時刻は仮）
+  { id: 'na-1130', date: '2026-11-30', start: '19:30', end: '22:00', kind: 'community', title: 'Noodle Asia（日本人参加者と交流）', place: 'Venetian' },
+  { id: 'rc-1201', date: '2026-12-01', start: '18:00', end: '20:00', kind: 'community', title: 'Networking reception', place: 'Venetian' },
+  { id: 'na-1201', date: '2026-12-01', start: '20:00', end: '22:00', kind: 'community', title: 'Noodle Asia（日本人参加者と交流）', place: 'Venetian' },
+  { id: 'rc-1202', date: '2026-12-02', start: '18:00', end: '20:00', kind: 'community', title: 'Networking reception', place: 'Venetian' },
+  { id: 'na-1202', date: '2026-12-02', start: '20:00', end: '22:00', kind: 'community', title: 'Noodle Asia（日本人参加者と交流）', place: 'Venetian' },
   // ブログは 1 日 2 本が目標。1 枠 90 分で 1 本の想定で、セッションと公式予定の隙間に置く
   { id: 'blog-1129-1', date: '2026-11-29', start: '19:00', end: '20:30', kind: 'blog', title: 'ブログ執筆 1 本目（現地の様子・準備）', place: 'MGM Grand' },
   { id: 'blog-1129-2', date: '2026-11-29', start: '21:00', end: '22:30', kind: 'blog', title: 'ブログ執筆 2 本目（現地の様子・準備）', place: 'MGM Grand' },
@@ -82,7 +88,7 @@ const SEED: PlanEvent[] = [
 
 const PLAN_KEY = 'sessionmap:plan'
 const SEED_VERSION_KEY = 'sessionmap:seedVersion'
-const SEED_VERSION = 4
+const SEED_VERSION = 5
 
 /** v3 までのブログ枠の初期値。これと同じまま（未編集）の枠だけを、v4 の初期値に差し替える */
 const OLD_BLOG_SLOTS: Record<string, string> = {
@@ -98,6 +104,7 @@ const OLD_BLOG_SLOTS: Record<string, string> = {
  * v1 は基調講演を仮置きしていた。編集されていない仮置き（tentative のまま）だけを捨てる。
  * v3 でブログ枠を追加した。版が上がるたびに、まだ無い ID の予定だけを足す
  * v4 で予約に合わせてブログ枠の時刻を変えた。未編集の枠だけを差し替える
+ * v5 で夜のレセプションと Noodle Asia を足した（まだ無い ID の予定として足される）
  */
 function migrate(events: PlanEvent[], from: number): PlanEvent[] {
   if (from >= SEED_VERSION) return events
