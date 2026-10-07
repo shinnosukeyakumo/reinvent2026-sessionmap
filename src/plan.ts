@@ -18,13 +18,14 @@ export const LIVE_ONLY_TYPES = new Set([
   'Gamified learning',
 ])
 
-export type PlanKind = 'keynote' | 'blog' | 'community' | 'swag' | 'other'
+export type PlanKind = 'keynote' | 'blog' | 'community' | 'swag' | 'sleep' | 'other'
 
 export const PLAN_KINDS: Record<PlanKind, { label: string; color: string }> = {
   keynote: { label: '基調講演', color: '#ff6ec7' },
   blog: { label: 'ブログ執筆', color: '#5bc0eb' },
   community: { label: '交流', color: '#f2b84b' },
   swag: { label: 'スワグ回収', color: '#9bc53d' },
+  sleep: { label: '睡眠', color: '#475569' },
   other: { label: 'その他', color: '#94a3b8' },
 }
 
@@ -42,7 +43,7 @@ export const RESERVED_CODES = new Set([
 
 /** 時間軸に置ける部品と、置いたときの長さ（分） */
 export const PLACEABLE_KINDS: PlanKind[] = ['blog', 'community', 'swag']
-export const DEFAULT_MINUTES: Record<PlanKind, number> = { keynote: 90, blog: 90, community: 120, swag: 60, other: 60 }
+export const DEFAULT_MINUTES: Record<PlanKind, number> = { keynote: 90, blog: 90, community: 120, swag: 60, sleep: 180, other: 60 }
 
 export type PlanEvent = {
   id: string
@@ -71,6 +72,37 @@ const SEED: PlanEvent[] = [
   { id: 'na-1201', date: '2026-12-01', start: '20:00', end: '22:00', kind: 'community', title: 'Noodle Asia（日本人参加者と交流）', place: 'Venetian' },
   { id: 'rc-1202', date: '2026-12-02', start: '18:00', end: '20:00', kind: 'community', title: 'Networking reception', place: 'Venetian' },
   { id: 'na-1202', date: '2026-12-02', start: '20:00', end: '22:00', kind: 'community', title: 'Noodle Asia（日本人参加者と交流）', place: 'Venetian' },
+  // 睡眠は毎晩 3:00–6:00 の 3 時間。それ以外の 30 分以上の空き（移動を除く）は、ブログ執筆・検証に充てる
+  { id: 'fill-1129-1', date: '2026-11-29', start: '20:30', end: '21:00', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1129-2', date: '2026-11-29', start: '22:30', end: '23:59', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1130-1', date: '2026-11-30', start: '00:00', end: '03:00', kind: 'blog', title: 'ブログ執筆・検証（深夜）', place: 'MGM Grand' },
+  { id: 'sleep-1130', date: '2026-11-30', start: '03:00', end: '06:00', kind: 'sleep', title: '睡眠', place: 'MGM Grand' },
+  { id: 'fill-1130-2', date: '2026-11-30', start: '06:00', end: '08:00', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1130-3', date: '2026-11-30', start: '11:00', end: '13:00', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1130-4', date: '2026-11-30', start: '14:30', end: '15:20', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1130-5', date: '2026-11-30', start: '19:00', end: '19:30', kind: 'blog', title: 'ブログ執筆・検証', place: 'Venetian' },
+  { id: 'fill-1130-6', date: '2026-11-30', start: '22:40', end: '23:59', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1201-1', date: '2026-12-01', start: '00:00', end: '03:00', kind: 'blog', title: 'ブログ執筆・検証（深夜）', place: 'MGM Grand' },
+  { id: 'sleep-1201', date: '2026-12-01', start: '03:00', end: '06:00', kind: 'sleep', title: '睡眠', place: 'MGM Grand' },
+  { id: 'fill-1201-2', date: '2026-12-01', start: '06:00', end: '07:50', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1201-3', date: '2026-12-01', start: '12:15', end: '12:45', kind: 'blog', title: 'ブログ執筆・検証', place: 'Venetian' },
+  { id: 'fill-1201-4', date: '2026-12-01', start: '14:00', end: '15:00', kind: 'blog', title: 'ブログ執筆・検証', place: 'Wynn/Encore' },
+  { id: 'fill-1201-5', date: '2026-12-01', start: '17:00', end: '17:45', kind: 'blog', title: 'ブログ執筆・検証', place: 'Wynn/Encore' },
+  { id: 'fill-1201-6', date: '2026-12-01', start: '23:00', end: '23:59', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1202-1', date: '2026-12-02', start: '00:00', end: '03:00', kind: 'blog', title: 'ブログ執筆・検証（深夜）', place: 'MGM Grand' },
+  { id: 'sleep-1202', date: '2026-12-02', start: '03:00', end: '06:00', kind: 'sleep', title: '睡眠', place: 'MGM Grand' },
+  { id: 'fill-1202-2', date: '2026-12-02', start: '06:00', end: '07:50', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1202-3', date: '2026-12-02', start: '11:45', end: '12:20', kind: 'blog', title: 'ブログ執筆・検証', place: 'Venetian' },
+  { id: 'fill-1202-4', date: '2026-12-02', start: '22:40', end: '23:59', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1203-1', date: '2026-12-03', start: '00:00', end: '03:00', kind: 'blog', title: 'ブログ執筆・検証（深夜）', place: 'MGM Grand' },
+  { id: 'sleep-1203', date: '2026-12-03', start: '03:00', end: '06:00', kind: 'sleep', title: '睡眠', place: 'MGM Grand' },
+  { id: 'fill-1203-2', date: '2026-12-03', start: '06:00', end: '07:50', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1203-3', date: '2026-12-03', start: '14:00', end: '14:30', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1203-4', date: '2026-12-03', start: '17:15', end: '18:45', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1204-1', date: '2026-12-04', start: '00:00', end: '03:00', kind: 'blog', title: 'ブログ執筆・検証（深夜）', place: 'MGM Grand' },
+  { id: 'sleep-1204', date: '2026-12-04', start: '03:00', end: '06:00', kind: 'sleep', title: '睡眠', place: 'MGM Grand' },
+  { id: 'fill-1204-2', date: '2026-12-04', start: '06:00', end: '07:51', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
+  { id: 'fill-1204-3', date: '2026-12-04', start: '15:00', end: '23:59', kind: 'blog', title: 'ブログ執筆・検証', place: 'MGM Grand' },
   // ブログは 1 日 2 本が目標。1 枠 90 分で 1 本の想定で、セッションと公式予定の隙間に置く
   { id: 'blog-1129-1', date: '2026-11-29', start: '19:00', end: '20:30', kind: 'blog', title: 'ブログ執筆 1 本目（現地の様子・準備）', place: 'MGM Grand' },
   { id: 'blog-1129-2', date: '2026-11-29', start: '21:00', end: '22:30', kind: 'blog', title: 'ブログ執筆 2 本目（現地の様子・準備）', place: 'MGM Grand' },
@@ -88,7 +120,7 @@ const SEED: PlanEvent[] = [
 
 const PLAN_KEY = 'sessionmap:plan'
 const SEED_VERSION_KEY = 'sessionmap:seedVersion'
-const SEED_VERSION = 5
+const SEED_VERSION = 6
 
 /** v3 までのブログ枠の初期値。これと同じまま（未編集）の枠だけを、v4 の初期値に差し替える */
 const OLD_BLOG_SLOTS: Record<string, string> = {
@@ -105,6 +137,7 @@ const OLD_BLOG_SLOTS: Record<string, string> = {
  * v3 でブログ枠を追加した。版が上がるたびに、まだ無い ID の予定だけを足す
  * v4 で予約に合わせてブログ枠の時刻を変えた。未編集の枠だけを差し替える
  * v5 で夜のレセプションと Noodle Asia を足した（まだ無い ID の予定として足される）
+ * v6 で睡眠（毎晩 3 時間）と、空き時間を埋めるブログ執筆・検証の枠を足した
  */
 function migrate(events: PlanEvent[], from: number): PlanEvent[] {
   if (from >= SEED_VERSION) return events
